@@ -135,7 +135,7 @@ def create_app():
         try:
             data = request.get_json()
             lane_id = data.get('lane_id')
-            driver_type = DriverType(data.get('driver_type', 'IDM'))
+            driver_type = data.get('driver_type', DriverType.IDM)
             position = data.get('position', 0.0)
             
             # Create route if provided
