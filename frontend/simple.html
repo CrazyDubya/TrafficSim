@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Simulation - Converted from Java</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        
+        .visualization-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .control-section:last-child {
+            border-bottom: none;
+        }
+        
+        .control-section h3 {
+            color: #444;
+            margin-bottom: 15px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary { background-color: #4CAF50; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-danger { background-color: #f44336; color: white; }
+        .btn-warning { background-color: #ff9800; color: white; }
+        .btn-info { background-color: #2196F3; color: white; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        
+        .btn:hover:not(:disabled) {
+            filter: brightness(110%);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        #simulation-canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h4 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status.stopped { background-color: #f44336; color: white; }
+        .status.running { background-color: #4CAF50; color: white; }
+        .status.paused { background-color: #ff9800; color: white; }
+        
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Traffic Simulation</h1>
+            <p>Converted from Java to Python with Web Frontend</p>
+            <div>Status: <span id="simulation-state" class="status stopped">STOPPED</span></div>
+        </header>
+
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="control-section">
+                    <h3>Simulation Controls</h3>
+                    <div class="button-group">
+                        <button id="start-btn" class="btn btn-primary">Start</button>
+                        <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                        <button id="resume-btn" class="btn btn-secondary" disabled>Resume</button>
+                        <button id="step-btn" class="btn btn-secondary">Step</button>
+                        <button id="stop-btn" class="btn btn-danger" disabled>Stop</button>
+                        <button id="reset-btn" class="btn btn-warning">Reset</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Scenarios</h3>
+                    <div class="button-group">
+                        <button id="load-simple-btn" class="btn btn-info">Load Simple Highway</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Add Vehicle</h3>
+                    <div class="form-group">
+                        <label for="vehicle-lane">Lane:</label>
+                        <select id="vehicle-lane">
+                            <option value="0">Lane 0</option>
+                            <option value="1">Lane 1</option>
+                            <option value="2">Lane 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle-position">Position (m):</label>
+                        <input type="number" id="vehicle-position" value="0" min="0" max="2000">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle-driver-type">Driver Type:</label>
+                        <select id="vehicle-driver-type">
+                            <option value="IDM">IDM (Intelligent)</option>
+                            <option value="AGGRESSIVE">Aggressive</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="CAUTIOUS">Cautious</option>
+                        </select>
+                    </div>
+                    <button id="add-vehicle-btn" class="btn btn-success">Add Vehicle</button>
+                </div>
+            </div>
+
+            <!-- Visualization Panel -->
+            <div class="visualization-panel">
+                <h3>Highway Simulation</h3>
+                <canvas id="simulation-canvas" width="800" height="250"></canvas>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Simulation Time</h4>
+                        <div id="sim-time" class="stat-value">0.0s</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Active Vehicles</h4>
+                        <div id="active-vehicles" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Total Vehicles</h4>
+                        <div id="total-vehicles" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Average Speed</h4>
+                        <div id="avg-speed" class="stat-value">0.0 m/s</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple Traffic Simulation JavaScript (no external dependencies)
+        class TrafficSimulation {
+            constructor() {
+                this.canvas = document.getElementById('simulation-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scale = 0.4; // pixels per meter
+                this.offsetY = this.canvas.height / 2;
+                this.updateInterval = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.drawBackground();
+                this.startUpdating();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('start-btn').addEventListener('click', () => this.startSimulation());
+                document.getElementById('pause-btn').addEventListener('click', () => this.pauseSimulation());
+                document.getElementById('resume-btn').addEventListener('click', () => this.resumeSimulation());
+                document.getElementById('step-btn').addEventListener('click', () => this.stepSimulation());
+                document.getElementById('stop-btn').addEventListener('click', () => this.stopSimulation());
+                document.getElementById('reset-btn').addEventListener('click', () => this.resetSimulation());
+                document.getElementById('load-simple-btn').addEventListener('click', () => this.loadSimpleScenario());
+                document.getElementById('add-vehicle-btn').addEventListener('click', () => this.addVehicle());
+            }
+            
+            async apiCall(endpoint, method = 'GET', data = null) {
+                try {
+                    const options = { method: method };
+                    if (data) {
+                        options.headers = { 'Content-Type': 'application/json' };
+                        options.body = JSON.stringify(data);
+                    }
+                    
+                    const response = await fetch(`/api/${endpoint}`, options);
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.message || 'API call failed');
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    this.showMessage(`Error: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+            
+            async startSimulation() {
+                try {
+                    await this.apiCall('start', 'POST');
+                    this.showMessage('Simulation started', 'success');
+                } catch (error) {}
+            }
+            
+            async pauseSimulation() {
+                try {
+                    await this.apiCall('pause', 'POST');
+                    this.showMessage('Simulation paused', 'info');
+                } catch (error) {}
+            }
+            
+            async resumeSimulation() {
+                try {
+                    await this.apiCall('resume', 'POST');
+                    this.showMessage('Simulation resumed', 'success');
+                } catch (error) {}
+            }
+            
+            async stepSimulation() {
+                try {
+                    await this.apiCall('step', 'POST');
+                    this.showMessage('Simulation stepped', 'info');
+                } catch (error) {}
+            }
+            
+            async stopSimulation() {
+                try {
+                    await this.apiCall('stop', 'POST');
+                    this.showMessage('Simulation stopped', 'info');
+                } catch (error) {}
+            }
+            
+            async resetSimulation() {
+                try {
+                    await this.apiCall('reset', 'POST');
+                    this.showMessage('Simulation reset', 'info');
+                    this.clearVisualization();
+                } catch (error) {}
+            }
+            
+            async loadSimpleScenario() {
+                try {
+                    await this.apiCall('scenarios/simple', 'POST');
+                    this.showMessage('Simple highway scenario loaded', 'success');
+                } catch (error) {}
+            }
+            
+            async addVehicle() {
+                try {
+                    const data = {
+                        lane_id: parseInt(document.getElementById('vehicle-lane').value),
+                        position: parseFloat(document.getElementById('vehicle-position').value),
+                        driver_type: document.getElementById('vehicle-driver-type').value
+                    };
+                    
+                    const result = await this.apiCall('vehicles', 'POST', data);
+                    this.showMessage(`Vehicle added: ID ${result.vehicle.id}`, 'success');
+                    document.getElementById('vehicle-position').value = '0';
+                } catch (error) {}
+            }
+            
+            async updateSimulation() {
+                try {
+                    const data = await this.apiCall('status');
+                    this.updateUI(data);
+                    this.drawVisualization(data);
+                } catch (error) {
+                    console.error('Update failed:', error);
+                }
+            }
+            
+            updateUI(data) {
+                // Update simulation state
+                const stateElement = document.getElementById('simulation-state');
+                stateElement.textContent = data.state;
+                stateElement.className = `status ${data.state.toLowerCase()}`;
+                
+                // Update button states
+                this.updateButtonStates(data.state);
+                
+                // Update statistics
+                if (data.stats) {
+                    document.getElementById('sim-time').textContent = `${data.stats.current_time.toFixed(1)}s`;
+                    document.getElementById('active-vehicles').textContent = data.stats.active_vehicles;
+                    document.getElementById('total-vehicles').textContent = data.stats.total_vehicles;
+                    document.getElementById('avg-speed').textContent = `${data.stats.average_speed.toFixed(1)} m/s`;
+                }
+            }
+            
+            updateButtonStates(state) {
+                const buttons = {
+                    start: document.getElementById('start-btn'),
+                    pause: document.getElementById('pause-btn'),
+                    resume: document.getElementById('resume-btn'),
+                    step: document.getElementById('step-btn'),
+                    stop: document.getElementById('stop-btn')
+                };
+                
+                // Reset all buttons
+                Object.values(buttons).forEach(btn => btn.disabled = false);
+                
+                switch (state) {
+                    case 'STOPPED':
+                        buttons.pause.disabled = true;
+                        buttons.resume.disabled = true;
+                        buttons.stop.disabled = true;
+                        break;
+                    case 'RUNNING':
+                        buttons.start.disabled = true;
+                        buttons.resume.disabled = true;
+                        break;
+                    case 'PAUSED':
+                        buttons.start.disabled = true;
+                        buttons.pause.disabled = true;
+                        break;
+                }
+            }
+            
+            drawBackground() {
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(0.7, '#90EE90');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            drawVisualization(data) {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawBackground();
+                
+                if (data.lanes && data.lanes.length > 0) {
+                    this.drawRoad(data.lanes);
+                }
+                
+                if (data.vehicles && data.vehicles.length > 0) {
+                    this.drawVehicles(data.vehicles);
+                }
+            }
+            
+            drawRoad(lanes) {
+                const roadWidth = lanes.length * 4 * this.scale;
+                const roadTop = this.offsetY - roadWidth / 2;
+                
+                // Draw road surface
+                this.ctx.fillStyle = '#404040';
+                this.ctx.fillRect(0, roadTop, this.canvas.width, roadWidth);
+                
+                // Draw lane markings
+                this.ctx.strokeStyle = '#FFFF00';
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([10, 10]);
+                
+                for (let i = 1; i < lanes.length; i++) {
+                    const y = roadTop + (i * 4 * this.scale);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+                
+                // Draw road borders
+                this.ctx.strokeStyle = '#FFFFFF';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([]);
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, roadTop);
+                this.ctx.lineTo(this.canvas.width, roadTop);
+                this.ctx.stroke();
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, roadTop + roadWidth);
+                this.ctx.lineTo(this.canvas.width, roadTop + roadWidth);
+                this.ctx.stroke();
+                
+                // Draw lane labels
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.font = '12px Arial';
+                for (let i = 0; i < lanes.length; i++) {
+                    const y = roadTop + (i * 4 * this.scale) + (2 * this.scale);
+                    this.ctx.fillText(`Lane ${i}`, 10, y);
+                }
+            }
+            
+            drawVehicles(vehicles) {
+                for (const vehicle of vehicles) {
+                    this.drawVehicle(vehicle);
+                }
+            }
+            
+            drawVehicle(vehicle) {
+                const x = vehicle.x * this.scale;
+                const y = this.offsetY + (vehicle.lane_id * 4 - 2) * this.scale;
+                
+                const length = vehicle.length * this.scale;
+                const width = vehicle.width * this.scale;
+                
+                // Vehicle color based on driver type
+                let color = '#FF4444';
+                if (vehicle.crashed) {
+                    color = '#800080';
+                } else {
+                    switch (vehicle.driver_type) {
+                        case 'AGGRESSIVE': color = '#FF0000'; break;
+                        case 'CAUTIOUS': color = '#4444FF'; break;
+                        default: color = '#FF4444';
+                    }
+                }
+                
+                // Draw vehicle body
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(x - length/2, y - width/2, length, width);
+                
+                // Draw vehicle outline
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(x - length/2, y - width/2, length, width);
+                
+                // Draw direction arrow
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + length/2 - 2, y);
+                this.ctx.lineTo(x + length/2 - 8, y - 3);
+                this.ctx.lineTo(x + length/2 - 8, y + 3);
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                // Draw vehicle ID
+                this.ctx.fillStyle = '#000000';
+                this.ctx.font = '10px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(vehicle.id.toString(), x, y - width/2 - 5);
+            }
+            
+            clearVisualization() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawBackground();
+            }
+            
+            startUpdating() {
+                this.updateInterval = setInterval(() => {
+                    this.updateSimulation();
+                }, 100); // Update every 100ms
+            }
+            
+            showMessage(message, type = 'info') {
+                const controlPanel = document.querySelector('.control-panel');
+                
+                // Remove existing messages
+                const existingMessages = controlPanel.querySelectorAll('.message');
+                existingMessages.forEach(msg => msg.remove());
+                
+                // Create new message
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = message;
+                
+                controlPanel.insertBefore(messageDiv, controlPanel.firstChild);
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Initialize the simulation when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.trafficSim = new TrafficSimulation();
+        });
+    </script>
+</body>
+</html>
