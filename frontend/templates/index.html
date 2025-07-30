@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Traffic Simulation</h1>
+            <div class="header-controls">
+                <div class="status-indicator">
+                    <span id="connection-status" class="status-dot disconnected"></span>
+                    <span id="simulation-state">STOPPED</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Simulation Controls -->
+            <div class="control-panel">
+                <div class="control-section">
+                    <h3>Simulation Controls</h3>
+                    <div class="button-group">
+                        <button id="start-btn" class="btn btn-primary">Start</button>
+                        <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                        <button id="resume-btn" class="btn btn-secondary" disabled>Resume</button>
+                        <button id="step-btn" class="btn btn-secondary">Step</button>
+                        <button id="stop-btn" class="btn btn-danger" disabled>Stop</button>
+                        <button id="reset-btn" class="btn btn-warning">Reset</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Scenarios</h3>
+                    <div class="button-group">
+                        <button id="load-simple-btn" class="btn btn-info">Load Simple Highway</button>
+                        <button id="clear-vehicles-btn" class="btn btn-secondary">Clear All Vehicles</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Add Vehicle</h3>
+                    <div class="form-group">
+                        <label for="vehicle-lane">Lane:</label>
+                        <select id="vehicle-lane">
+                            <option value="0">Lane 0</option>
+                            <option value="1">Lane 1</option>
+                            <option value="2">Lane 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle-position">Position (m):</label>
+                        <input type="number" id="vehicle-position" value="0" min="0" max="2000">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle-driver-type">Driver Type:</label>
+                        <select id="vehicle-driver-type">
+                            <option value="IDM">IDM (Intelligent)</option>
+                            <option value="AGGRESSIVE">Aggressive</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="CAUTIOUS">Cautious</option>
+                        </select>
+                    </div>
+                    <button id="add-vehicle-btn" class="btn btn-success">Add Vehicle</button>
+                </div>
+
+                <div class="control-section">
+                    <h3>Settings</h3>
+                    <div class="form-group">
+                        <label for="time-step">Time Step (s):</label>
+                        <input type="number" id="time-step" value="0.1" min="0.01" max="1.0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="real-time-factor">Speed Factor:</label>
+                        <input type="number" id="real-time-factor" value="1.0" min="0.1" max="10.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="debug-mode"> Debug Mode
+                        </label>
+                    </div>
+                    <button id="update-settings-btn" class="btn btn-info">Update Settings</button>
+                </div>
+            </div>
+
+            <!-- Simulation Visualization -->
+            <div class="visualization-panel">
+                <div class="simulation-display">
+                    <h3>Highway Simulation</h3>
+                    <canvas id="simulation-canvas" width="1000" height="300"></canvas>
+                </div>
+
+                <div class="stats-panel">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h4>Simulation Time</h4>
+                            <span id="sim-time" class="stat-value">0.0s</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Active Vehicles</h4>
+                            <span id="active-vehicles" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Total Vehicles</h4>
+                            <span id="total-vehicles" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Average Speed</h4>
+                            <span id="avg-speed" class="stat-value">0.0 m/s</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Traffic Flow</h4>
+                            <span id="traffic-flow" class="stat-value">0.0 veh/h</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Average Density</h4>
+                            <span id="avg-density" class="stat-value">0.0 veh/km</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-container">
+                    <div class="chart-panel">
+                        <h4>Speed vs Time</h4>
+                        <canvas id="speed-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <h4>Flow vs Time</h4>
+                        <canvas id="flow-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Info Modal -->
+        <div id="vehicle-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Vehicle Information</h3>
+                <div id="vehicle-info"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/simulation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+</body>
+</html>
