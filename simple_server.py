@@ -23,8 +23,9 @@ class TrafficSimHandler(SimpleHTTPRequestHandler):
     """Simple HTTP handler for the traffic simulation"""
     
     def __init__(self, *args, **kwargs):
-        # Set the directory to serve files from
-        super().__init__(*args, directory='frontend', **kwargs)
+        # Dynamically resolve the path to the 'frontend' directory
+        frontend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend')
+        super().__init__(*args, directory=frontend_path, **kwargs)
     
     def do_GET(self):
         """Handle GET requests"""
