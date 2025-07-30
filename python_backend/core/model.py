@@ -263,9 +263,12 @@ class TrafficSimulationModel:
                 self._update_simulation(dt)
                 
                 # Sleep to maintain real-time factor
-                sleep_time = self.settings.time_step / self.settings.real_time_factor
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
+                if self.settings.real_time_factor > 0:
+                    sleep_time = self.settings.time_step / self.settings.real_time_factor
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+                else:
+                    print("Warning: real_time_factor must be greater than 0. Skipping sleep.")
                 
                 last_real_time = current_real_time
             else:
